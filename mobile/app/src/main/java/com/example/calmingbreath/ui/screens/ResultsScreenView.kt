@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingFlat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Button
@@ -96,8 +97,11 @@ fun ResultsScreenContent(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = if (diff >= 0) Icons.AutoMirrored.Filled.TrendingDown
-                    else Icons.AutoMirrored.Filled.TrendingUp,
+                    imageVector = when {
+                        diff > 0 -> Icons.AutoMirrored.Filled.TrendingDown
+                        diff < 0 -> Icons.AutoMirrored.Filled.TrendingUp
+                        else -> Icons.AutoMirrored.Filled.TrendingFlat
+                    },
                     contentDescription = null,
                     tint = ResultsAccent,
                     modifier = Modifier.size(40.dp),

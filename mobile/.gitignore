@@ -1,11 +1,26 @@
-*.iml
-.gradle
-/local.properties
-/.idea
-.log
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle
+.gradle/
+build/
+.kotlin/
+
+# Локальные настройки (путь к Android SDK и т.п.)
 local.properties
+
+# Android Studio
+.idea/
+*.iml
+captures/
+.navigation/
+.externalNativeBuild/
+.cxx/
+
+# Сборки и подписи релиза
+*.apk
+*.aab
+*.ap_
+*.jks
+*.keystore
+/app/release/
+
+# Логи
+*.log

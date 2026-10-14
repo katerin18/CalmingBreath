@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -51,15 +50,11 @@ class MainActivity : ComponentActivity() {
                 factory = AuthViewModelFactory(applicationContext)
             )
 
-            // Авто-вход: если refresh-токен сохранён с прошлого сеанса — стартуем сразу с главного экрана.
-            val tokenManager = remember { TokenManager(applicationContext) }
-            val startDestination: Any = remember {
-                if (tokenManager.getRefreshToken() != null) FirstHeartRateInputScreen else LoginRoute
-            }
-
+            // US1: приложение сразу открывается на главном экране, без входа и регистрации.
+            // Экраны Login/Register оставлены в графе, но на них никто не переходит.
             NavHost(
                 navController = navController,
-                startDestination = startDestination
+                startDestination = FirstHeartRateInputScreen
             ) {
                 composable<LoginRoute> {
                     val authState by authViewModel.state.collectAsState()
@@ -107,21 +102,13 @@ class MainActivity : ComponentActivity() {
                 }
 
                 composable<FirstHeartRateInputScreen> {
-                    val authState by authViewModel.state.collectAsState()
                     FirstHeartRateInputScreenView(
                         viewModel = heartRateViewModel,
-                        userName = authState.user?.firstName,
                         onNavigateToExercise = {
                             navController.navigate(ExerciseScreen)
                         },
                         onBack = { navController.popBackStack() },
                         onViewHistory = { navController.navigate(HistoryScreen) },
-                        onLogout = {
-                            authViewModel.onAction(AuthAction.LogoutClicked)
-                            navController.navigate(LoginRoute) {
-                                popUpTo(0) { inclusive = true }
-                            }
-                        }
                     )
                 }
 
@@ -132,6 +119,12 @@ class MainActivity : ComponentActivity() {
                         onNavigateNext = {
                             heartRateViewModel.onExerciseDone()
                             navController.navigate(SecondHeartRateInputScreen)
+                        },
+                        // Сессия без второго замера остаётся completed = 0 и не попадает в историю.
+                        onDiscard = {
+                            navController.navigate(FirstHeartRateInputScreen) {
+                                popUpTo(FirstHeartRateInputScreen) { inclusive = true }
+                            }
                         }
                     )
                 }
@@ -159,7 +152,7 @@ class MainActivity : ComponentActivity() {
 
                 composable<HistoryScreen> {
                     val historyViewModel: HistoryViewModel = viewModel(
-                        factory = HistoryViewModelFactory(applicationContext)
+                        factory = HistoryViewModelFactory(db.exerciseDao())
                     )
                     HistoryScreenView(
                         viewModel = historyViewModel,
