@@ -19,8 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,10 +34,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.calmingbreath.MeasurementResponse
 import com.example.calmingbreath.R
+import com.example.calmingbreath.data.ExerciseSessionEntity
 import com.example.calmingbreath.ui.viewmodel.HistoryViewModel
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 
@@ -95,28 +94,6 @@ fun HistoryScreenView(
                     CircularProgressIndicator(color = SageGreen)
                 }
 
-                state.isError -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = stringResource(R.string.history_error),
-                            fontSize = 16.sp,
-                            color = HistorySubtitleColor,
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Button(
-                            onClick = viewModel::load,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = SageGreen),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.history_retry),
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White,
-                            )
-                        }
-                    }
-                }
-
                 state.items.isEmpty() -> {
                     Text(
                         text = stringResource(R.string.history_empty),
@@ -142,8 +119,8 @@ fun HistoryScreenView(
 }
 
 @Composable
-private fun HistoryCard(item: MeasurementResponse) {
-    val diff = item.startPulse - item.endPulse // > 0 => пульс снизился
+private fun HistoryCard(item: ExerciseSessionEntity) {
+    val diff = item.bpmBefore - item.bpmAfter // > 0 => пульс снизился
     val accent = if (diff >= 0) HistoryAccentDown else HistoryAccentUp
     val sign = if (diff > 0) "−" else if (diff < 0) "+" else ""
 
@@ -154,7 +131,7 @@ private fun HistoryCard(item: MeasurementResponse) {
             .padding(16.dp),
     ) {
         Text(
-            text = formatDate(item.measuredAt),
+            text = formatDate(item.startExerciseTime),
             fontSize = 13.sp,
             color = HistorySubtitleColor,
         )
@@ -166,7 +143,7 @@ private fun HistoryCard(item: MeasurementResponse) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = item.startPulse.toString(),
+                text = item.bpmBefore.toString(),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = HistoryTitleColor,
@@ -180,7 +157,7 @@ private fun HistoryCard(item: MeasurementResponse) {
             )
             Spacer(Modifier.size(10.dp))
             Text(
-                text = item.endPulse.toString(),
+                text = item.bpmAfter.toString(),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = HistoryTitleColor,
@@ -203,21 +180,15 @@ private fun HistoryCard(item: MeasurementResponse) {
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = stringResource(R.string.history_duration, formatDuration(item.exerciseDurationSeconds)),
+            text = stringResource(R.string.history_duration, formatDuration(item.exercisesDurationSec)),
             fontSize = 13.sp,
             color = HistoryCardLabel,
         )
     }
 }
 
-private fun formatDate(isoLocal: String): String {
-    return try {
-        val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
-        val date = parser.parse(isoLocal) ?: return isoLocal
-        SimpleDateFormat("d MMM yyyy, HH:mm", Locale("ru")).format(date)
-    } catch (e: Exception) {
-        isoLocal
-    }
+private fun formatDate(epochMillis: Long): String {
+    return SimpleDateFormat("d MMM yyyy, HH:mm", Locale("ru")).format(Date(epochMillis))
 }
 
 private fun formatDuration(totalSeconds: Long): String {

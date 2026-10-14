@@ -19,16 +19,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,10 +53,46 @@ private val SecondaryButtonText = Color(0xFF4A4A45)
 @Composable
 fun ExerciseScreenView(
     viewModel: ExerciseViewModel,
-    onNavigateNext: () -> Unit
+    onNavigateNext: () -> Unit,
+    onDiscard: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     val cycles = remember { viewModel.cycles }
+
+    var showFinishDialog by remember { mutableStateOf(false) }
+    // Было ли упражнение запущено до открытия диалога — чтобы продолжить его при отмене.
+    var wasRunningBeforeDialog by remember { mutableStateOf(false) }
+
+    if (showFinishDialog) {
+        val closeAndResume = {
+            showFinishDialog = false
+            if (wasRunningBeforeDialog) viewModel.onPause()
+        }
+        AlertDialog(
+            onDismissRequest = closeAndResume,
+            title = { Text(stringResource(R.string.finish_dialog_title)) },
+            text = { Text(stringResource(R.string.finish_dialog_text)) },
+            confirmButton = {
+                Column(horizontalAlignment = Alignment.End) {
+                    TextButton(onClick = {
+                        showFinishDialog = false
+                        viewModel.onFinishEarly()
+                    }) {
+                        Text(stringResource(R.string.finish_dialog_measure))
+                    }
+                    TextButton(onClick = {
+                        showFinishDialog = false
+                        onDiscard()
+                    }) {
+                        Text(stringResource(R.string.finish_dialog_discard))
+                    }
+                    TextButton(onClick = closeAndResume) {
+                        Text(stringResource(R.string.finish_dialog_continue))
+                    }
+                }
+            },
+        )
+    }
 
     LaunchedEffect(state.shouldNavigateNext) {
         if (state.shouldNavigateNext) {
@@ -205,7 +245,12 @@ fun ExerciseScreenView(
             Spacer(Modifier.height(16.dp))
 
             Button(
-                onClick = viewModel::onFinishEarly,
+                onClick = {
+                    // Ставим на паузу, пока пользователь решает, что делать.
+                    wasRunningBeforeDialog = !state.isPaused
+                    if (wasRunningBeforeDialog) viewModel.onPause()
+                    showFinishDialog = true
+                },
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = SecondaryButtonBg),
                 modifier = Modifier
