@@ -1,0 +1,24 @@
+# ---- Общие правила для всего репозитория ----
+
+# macOS / Windows / Linux
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+*~
+
+# IDE и редакторы
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+
+# Логи
+*.log
+
+# Переменные окружения и секреты
+.env
+.env.*
+!.env.example

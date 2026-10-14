@@ -30,7 +30,7 @@ build/
 !**/src/test/**/build/
 
 ### VS Code ###
-*.vscode/
+.vscode/
 
 ### env files ###
 .env
@@ -38,3 +38,7 @@ build/
 .env.*.local
 *.env
 .env.production
+
+### Logs ###
+*.log
+mvn_output.txt
